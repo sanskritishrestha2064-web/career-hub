@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password      String
+  name          String?
+  role          Role     @default(SEEKER)
+
+  // Profile fields
+  headline      String?  @default("Frontend Developer")
+  about         String?  @default("Passionate developer focused on building modern, responsive, and performant web applications.")
+  experience    String?  @default("Frontend Developer at ABC Company (2025 – Present)")
+  education     String?  @default("BSc Computer Science")
+  resumeUrl     String?
+  resumeName    String?  @default("Resume.pdf")
+  location      String?  @default("Kathmandu, Nepal")
+  phone         String?
+  avatarUrl     String?
+
+  jobs          Job[]
+  applications  Application[]
+  skills        Skill[]
+  savedJobs     SavedJob[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Skill {
+  id        Int      @id @default(autoincrement())
+  name      String
+
+  //relation
+  userId    Int
+  user      User     @relation(fields:[userId], references:[id], onDelete: Cascade)
+
+  @@unique([userId, name])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Job {
+  id            Int         @id @default(autoincrement())
+  title         String
+  description   String    
+  company       String
+  location      String
+  salary        Int
+  type          JobType     @default(FULL_TIME)
+  views         Int         @default(0)
+
+  employerId    Int
+  employer      User        @relation(fields:[employerId], references:[id], onDelete: Cascade)
+
+  applications  Application[]
+  savedBy       SavedJob[]
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model SavedJob {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jobId     Int
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, jobId])
+}
+
+model Application {
+  id                  Int                 @id @default(autoincrement())
+  status              ApplicationStatus   @default(PENDING)
+  cvUrl               String
+  resumeName          String?             @default("Resume.pdf")
+  coverLetter         String
+  yearsOfExperience   String
+
+  seekerId            Int
+  seeker              User                @relation(fields:[seekerId], references:[id], onDelete: Cascade)
+
+  jobId               Int
+  job                 Job                 @relation(fields:[jobId], references:[id], onDelete: Cascade)
+
+  @@unique([jobId, seekerId])
+
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+}
+
+// enums
+enum Role {
+  SEEKER
+  EMPLOYER
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  INTERNSHIP
+  CONTRACT
+}
+
+enum ApplicationStatus {
+  APPROVED
+  PENDING
+  DECLINED
+  SHORTLISTED
+  INTERVIEW
+  REJECTED
+}
